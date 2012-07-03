@@ -275,9 +275,6 @@ def correlation_unit_test():
     # mag.compute_correlation()
     # auto.write('test_clustering_correlation.ascii')
     # mag.write('test_convergence_correlation.ascii')
-    
-def camb_unit_test():
-    pass
 
 if __name__ == "__main__":
     cosmology_unit_test()
