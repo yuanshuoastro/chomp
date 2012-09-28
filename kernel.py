@@ -95,7 +95,7 @@ class dNdzGaussian(dNdz):
                           (2.0*self.sigma_z*self.sigma_z))
 
 
-class dNdChiGaussian(dNdz):
+class dNdzChiGaussian(dNdz):
     """Derived class for a Gaussian-shaped comoving distance distribution.
 
     dNdz ~ exp(-(chi-chi0)^2/sigma_chi^2)*dchi/dz

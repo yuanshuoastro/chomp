@@ -4,7 +4,7 @@ import cosmology
 import numpy
 
 """
-Class for perturbation theory expressions for the matter 3 and 4-point 
+Class for perturbation theory expressions for the matter 3 and 4-point
 functions.
 
 References
@@ -71,17 +71,17 @@ class PerturbationTheory(object):
             cosmo_single_epoch.set_redshift(redshift)
         self.cosmo = cosmo_single_epoch
         return None
-    
+
     def set_cosmology(self, cosmo_dict, redshift=None):
         if redshift is None:
             redshift = self._redshift
         self.cosmo.set_cosmology(cosmo_dict, redshift)
         self._redshift = redshift
-    
+
     def set_cosmology_object(self, cosmo_single_epoch):
         self.cosmo = cosmo_single_epoch
         self._redshift = self.cosmo._redshift
-    
+
     def set_redshift(self, redshift):
         self._redshift = redshift
         self.cosmo.set_redshif(self._redshift)
@@ -100,28 +100,49 @@ class PerturbationTheory(object):
             res = 5. / 7.
         else:
             rat = d / (k1a * k2a)
-            res = ((5. / 7. + (rat / 2.) * (k1a / k2a + k2a / k1a) + 
-                   (2. / 7.) * rat * rat))
-        return res
-    
-    def Fs2_len(self, k1, k2, z):
-        res = numpy.where(numpy.logical_or(k1 < 1.e-8, k2 < 1.e-8), 5.0/7.0,
-                          ((5. / 7. + (z / 2.) * (k1 / k2 + k2 / k1) + 
-                            (2. / 7.) * z * z)))
+            res = (5. / 7. + (rat / 2.) * (k1a / k2a + k2a / k1a) +
+                   (2. / 7.) * rat * rat)
         return res
 
-    def Fs2_parallelogram(self, k1, mu):
+    def Fs2_len(self, k1, k2, z):
         """
-        Eq. A.2 in GGRW for the special case Fs2(k1, -k1).
+        Eq. A.2 in GGRW, taking scalar arguments and handling
+        the case when k1 or k2 are close to zero.
 
         Args:
             k1: wavenumber in h/Mpc
-            mu: cosine of the angle between the wavevectors k1 and k2
+            k2: wavenumber in h/Mpc
+            z: dot(k1, k2) / (|k1| |k2|)
 
         Returns:
-            Fs2 evaluated for the special arguments k1, -k1
+            Fs2 evaluated for wavenumbers k1, k2 with normalized dot product z.
         """
-        return (5. / 7.) + mu + (2. / 7.) * mu * mu
+        res = numpy.where(numpy.logical_or(k1 < 1.e-8, k2 < 1.e-8), 5.0 / 7.0,
+                          ((5. / 7. + (z / 2.) * (k1 / k2 + k2 / k1) +
+                            (2. / 7.) * z * z)))
+        return res
+
+    def Fs2_kdiff(self, k1, k2, mu):
+        """
+        Fs2(k1 - k2, k2) for vector arguments k1, k2
+        """
+        x = k1 * k1 + k2 * k2 - 2. * k1 * k2 * mu
+        z = (k1 * mu - k2) / x
+        xrt = numpy.sqrt(x)
+        return self.Fs2_len(xrt, k2, z)
+
+    # def Fs2_parallelogram(self, k1, mu):
+    #     """
+    #     Eq. A.2 in GGRW for the special case |k1| = |k2|.
+
+    #     Args:
+    #         k1: wavenumber in h/Mpc
+    #         mu: cosine of the angle between the wavevectors k1 and k2
+
+    #     Returns:
+    #         Fs2 evaluated for the special arguments k1, -k1
+    #     """
+    #     return (5. / 7.) + mu + (2. / 7.) * mu * mu
 
     def Fs3(self, k1, k2, k3):
         """
@@ -153,7 +174,7 @@ class PerturbationTheory(object):
         if k23a < 1.0e-8:
             c3 = 0.0
         else:
-            c3 = ((numpy.vdot(k1, k2 + k3) * k123a) / 
+            c3 = ((numpy.vdot(k1, k2 + k3) * k123a) /
                   (3. * k1a * k2a * k3a * k23a))
         c4 = numpy.vdot(k1, k1 + k2 + k3) / (18. * k1a * k2a * k3a)
         return c1 * b1 * b2 + c3 * b3 + c4 * b4
@@ -190,14 +211,14 @@ class PerturbationTheory(object):
         k12 = k1 + k2
         g312 = gamma_BCGS(k3, k12)
         g12 = gamma_BCGS(k1, k2)
-        R11 = ((0.5 * alpha_BCGS(k3, k12) + 0.5 * alpha_BCGS(k12, k3) - 
+        R11 = ((0.5 * alpha_BCGS(k3, k12) + 0.5 * alpha_BCGS(k12, k3) -
                 (1. / 3.) * g312) * alpha_BCGS(k1, k2))
-        R12 = ((-1.5 * alpha_BCGS(k12, k3) - (4. / 3.) * alpha_BCGS(k3, k12) + 
+        R12 = ((-1.5 * alpha_BCGS(k12, k3) - (4. / 3.) * alpha_BCGS(k3, k12) +
                 2.5 * g312) * g12)
-        R2 = 0.75 * (alpha_BCGS(k3, k12) + alpha_BCGS(k12, k3) - 
+        R2 = 0.75 * (alpha_BCGS(k3, k12) + alpha_BCGS(k12, k3) -
                       3. * g312) * g12
         R3 = (3. / 8.) * g312 * g12
-        R4 = ((2. / 3.) * g312 * alpha_BCGS(k1, k2) - ((1. / 3.) * 
+        R4 = ((2. / 3.) * g312 * alpha_BCGS(k1, k2) - ((1. / 3.) *
             alpha_BCGS(k3, k12) + 0.5 * g312) * g12)
         return (R11 + R12) + nu2 * R2 + nu3 * R3 + lambda3 * R4
 
@@ -226,7 +247,7 @@ class PerturbationTheory(object):
                     self.Fs2(k1, k3) * p1 * p3 +
                     self.Fs2(k2, k3) * p2 * p3)
         return res
-    
+
     def bispectrum_len(self, k1, k2, k3, z12, z13, z23):
         p1 = self.cosmo.linear_power(k1)
         p2 = self.cosmo.linear_power(k2)
@@ -236,7 +257,6 @@ class PerturbationTheory(object):
                     self.Fs2_len(k1, k3, z13) * p1 * p3 +
                     self.Fs2_len(k2, k3, z23) * p2 * p3)
         return res
-        
 
     def trispectrum(self, k1, k2, k3, k4):
         """
@@ -309,15 +329,15 @@ class PerturbationTheory(object):
         z = 1 + x ** 2 - 2 * x * mu
         p1 = self.cosmo.linear_power(k1)
         p2 = self.cosmo.linear_power(k2)
-        k1mk2 = k1 * numpy.sqrt(z)
-        p12 = self.cosmo.linear_power(k1 * numpy.sqrt(z)) # k1 - k2
-        F21 = self.Fs2_parallelogram(k1 - k2, k2)
-        F22 = self.Fs2_parallelogram(k2 - k1, k1)
-        a1 = 12. * self.Fs3_parallelogram(k1, -k1, k2) * (p1 ** 2) * p2
+        # k1mk2 = k1 * numpy.sqrt(z)
+        p12 = self.cosmo.linear_power(k1 * numpy.sqrt(z))  # k1 - k2
+        F21 = self.Fs2_kdiff(k1, k2, mu)  # (k1 - k2, k2)
+        F22 = self.Fs2_kdiff(k2, k1, mu)  # (k2 - k1, k1)
+        a1 = 12. * self.Fs3_parallelogram(k1, k2, mu) * (p1 ** 2) * p2
         a2 = 8. * F21 ** 2 * p12 * p2 ** 2
         a3 = 16. * F21 * F22 * p1 * p2 * p12
 
-        b1 = 12. * self.Fs3_parallelogram(k2, -k2, k1) * (p2 ** 2) * p1
+        b1 = 12. * self.Fs3_parallelogram(k2, k1, mu) * (p2 ** 2) * p1
         b2 = 8. * F22 ** 2 * p12 * p1 ** 2
 
         res = a1 + b1 + a2 + b2 + 2. * a3
