@@ -35,23 +35,22 @@ class Covariance(object):
         wcovar_array: array of computed covariance values at theta_array values
     """
 
-    def __init__(self, theta_min_deg, theta_max_deg,
-                 bins_per_decade=5,
-                 survey_area_deg2=4*numpy.pi*strad_to_deg2,
-                 n_pairs=1e6*1e6, variance=1.0,
-                 nongaussian_cov=True,
-                 input_kernel_covariance=None,
-                 input_halo=None,
+    def __init__(self, input_correlation_a, input_correlation_b,
+                 bins_per_decade=5, survey_area_deg2=4*numpy.pi*strad_to_deg2,
+                 n_pairs=1e6*1e6, variance=1.0, nongaussian_cov=True,
                  input_halo_trispectrum=None, **kws):
 
         self.annular_bins = []
-        unit_double = numpy.floor(numpy.log10(theta_min_deg))*bins_per_decade
+        self.log_theta_min = input_correlation_a.log_theta_min
+        self.log_theta_max = input_correlation_b.log_theta_max
+        unit_double = (numpy.floor(self.log_theta_min)*bins_per_decade)
         theta = numpy.power(10.0, unit_double/bins_per_decade)
-        while theta < theta_max_deg:
-            if theta >= theta_min_deg and theta < theta_max_deg:
+        while theta < numpy.power(10.0, self.log_theta_max):
+            if (theta >= numpy.power(10.0, self.log_theta_min) and
+                theta < numpy.power(10.0, theta_max_deg)):
                 self.annular_bins.append(AnnulusBin(
                     theta, numpy.power(
-                               10.0, (unit_double+1.0)/bins_per_decade)))
+                        10.0, (unit_double+1.0)/bins_per_decade)))
                 unit_double += 1.0
                 theta = numpy.power(10.0, unit_double/bins_per_decade)
 
@@ -60,7 +59,13 @@ class Covariance(object):
         self.variance = variance
         self.nongaussian_cov = nongaussian_cov
 
-        self.kernel = input_kernel_covariance
+        self.kernel = kernel.KernelCovariance(
+            ktheta_min, ktheta_max,
+            input_correlation_a.kernel.window_function_a,
+            input_correlation_a.kernel.window_function_b,
+            input_correlation_b.kernel.window_function_a,
+            input_correlation_b.kernel.window_function_b,
+            input_correlation_a.kernel.cosmo, force_quad=False)
 
         self._z_min_a = numpy.max([self.kernel.window_function_a1.z_min,
                                    self.kernel.window_function_a2.z_min])
@@ -81,8 +86,8 @@ class Covariance(object):
 
         self.D_z_NG = self.kernel.cosmo.growth_factor(self.kernel.z_bar_NG)
 
-        self.halo_a = input_halo
-        self.halo_b = copy(input_halo)
+        self.halo_a = input_correlation_a.halo
+        self.halo_b = copy(self.halo_a)
         self.halo_tri = input_halo_trispectrum
         # self.halo.set_redshift(self.kernel.z_bar_G)
         # self.halo_tri.set_redshift(self.kernel.z_bar_NG)
