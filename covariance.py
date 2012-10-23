@@ -20,16 +20,22 @@ strad_to_deg2 = rad_to_deg*rad_to_deg
 
 class Covariance(object):
     """
-    Class to compute the covariance matrix between theta_a and theta_b
-    given input kernel and halo trispectrum objects. This class can be used to
+    Class to compute the covariance matrix between at range of theta values,
+    given two imput correlation objects, survey definition, and a halo 
+    trispectrum. It is assumed that the ranges for both correlations are the
+    same, if they are not the covariance will default to the binning, cosmology,
+    and 2-point halo objects in input_correlation_a
     estimate the covariance between different estimators as a function.
 
     Attributes:
-        theta_min: minimum angular extent in radians
-        theta_max: maximum angular extent in radians
-        input_kernel: KernelCovariance object from kernel.py
+        input_correlation_a: A Correlation object from correlation.py
+        input_correlation_b: A Correlation object from correlation.py
+        bins_per_decade: int log spacing of the theta bins
+        survey_area_deg2: float value of the survey area it square degrees
+        n_pairs: float number of pairs to compute the poisson term
+        variance: float variance per pair
+        nongaussian_cov: bool, toggles nonguassian covariance
         input_halo: HaloTrispectrum object from halo.py
-        input_hod: HOD object from hod.py
 
         theta_array: array of theta values for computed correlation function
         wcovar_array: array of computed covariance values at theta_array values
@@ -351,12 +357,36 @@ class Covariance(object):
         
 class CovarianceMulti(Covariance):
     
-    def __init__(self, correlation_list,bins_per_decade=5,
+    def __init__(self, correlation_object_list, bins_per_decade=5,
                  survey_area_deg2=4*numpy.pi*strad_to_deg2,
                  n_pairs=1e6*1e6, variance=1.0, nongaussian_cov=True,
                  input_halo_trispectrum=None, **kws):
-        pass
-    
+        self.covariance_list = []
+        n_covars = 0
+        for idx1 in xrange(len(correlation_object_list)):
+            tmp_list = []
+            for idx2 in xrange(idx, len(correlation_object_list)):
+                tmp_list.append(Covariance(
+                    correlation_object_list[idx1],
+                    correlation_object_list[idx2], bins_per_decade,
+                    survey_area_deg2, n_pairs, variace, nongaussian_cov,
+                    input_halo_trispectrum))
+                n_covars += 1
+            self.covariance_list.append(tmp_list)
+        self.theta_bins = len(self.covariance_list[0].annular_bins)
+        n_corrs = 1
+        self.wcovar = numpy.empty((theta_bins*n_covars,
+                                       theta_bins*n_covars))
+        
+    def get_covariance(self):
+        for idx1, row in self.covariance_list:
+            for idx2, covar in row:
+                covar.get_covariance()
+                self.wcovar[self.theta_bins*idx1:self.theta_bins(idx1+idx2),
+                            self.theta_bins*idx1:self.theta_bins(idx1+idx2)]
+                self.wcovar[self.theta_bins(idx1+idx2):self.theta_bins*idx1,
+                            self.theta_bins(idx1+idx2):self.theta_bins*idx1:]
+                
     
 class CovarianceFourier(object):
     
