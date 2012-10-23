@@ -342,6 +342,15 @@ class Covariance(object):
         return (dkb*kb*norm*self.halo_tri.trispectrum_parallelogram(ka, kb)*
             self.kernel.kernel(numpy.log(ka*theta_a),
                                numpy.log(kb*theta_b))[0])
+        
+        
+class CovarianceMulti(Covariance):
+    
+    def __init__(self, correlation_list,bins_per_decade=5,
+                 survey_area_deg2=4*numpy.pi*strad_to_deg2,
+                 n_pairs=1e6*1e6, variance=1.0, nongaussian_cov=True,
+                 input_halo_trispectrum=None, **kws):
+        pass
     
     
 class CovarianceFourier(object):
