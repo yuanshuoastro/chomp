@@ -8,7 +8,7 @@ halo.  In principle, this distribution can be a function of any number of halo
 and galaxy variables.  For the purposes of this implementation, we allow for
 the HOD to vary as a function of halo mass and redshift.  Any HOD-derived
 object should be capable of returning the first and second moments of the
-distribution as a function of mass and redshift.
+distribution as a function of mass and redshift. 
 """
 
 __author__ = "Chris Morrison <morrison.chrisb@gmail.com>"
@@ -20,7 +20,8 @@ class HOD(object):
     redshift.  Our base class defines the API that all of the derived class
     instances need to implement.
     """
-    def __init__(self):
+    def __init__(self, hod_dict):
+        self.hod_dict = hod_dict
         self._hod = {}
         self._hod[1] = self.first_moment
         self._hod[2] = self.second_moment
@@ -84,6 +85,9 @@ class HOD(object):
             for j in xrange(n):
                 exp_nth *= (j*alpha_m2 - j + 1)
         return exp_nth
+    
+    def set_hod(self, hod_dict):
+        self.__init__(hod_dict)
 
     def set_halo(self, halo_dict):
         pass
@@ -118,6 +122,7 @@ class HODBinomial(HOD):
         pass
 
 class HODKravtsov(HOD):
+    
     def __init__(self, halo_param=None, **kws):
         HOD.__init__(self)
 
@@ -184,21 +189,30 @@ class HODZheng(HOD):
             be 1. (see references above)
     """
 
-    def __init__(self, M_min=10**13.0, sigma=0.15, 
-                 M_0=10**13.0, M_1p=10**14.00, alpha=1.0):
-        self.M_min = M_min
-        self.sigma = sigma
-        self.M_0 = M_0
-        self.M_1p = M_1p
-        self.alpha = alpha
-        HOD.__init__(self)
+    def __init__(self, hod_dict=None):
+        if hod_dict is None:
+            ### HOD parameters from Zehavi et al. 2011 with parameter 
+            ### assumptions from Wake et al. 2011.
+            self.log_M_min = 12.14
+            self.sigma = 0.15
+            self.log_M_0 = 12.14
+            self.log_M_1p = 13.43
+            self.alpha = 1.0
+        else:
+            self.log_M_min = hod_dict['log_M_min']
+            self.sigma = hod_dict['sigma']
+            self.log_M_0 = hod_dict['log_M_0']
+            self.log_M_1p = hod_dict['log_M_1p']
+            self.alpha = hod_dict['alpha']
+        HOD.__init__(self, hod_dict)
         
         ### These variables are useful for focusing the halo model mass integral
         ### on non-zero ranges of the integrand. Default -1 forces code to 
         ### integrate over the whole mass range.
-        self.first_moment_zero = numpy.power(10, numpy.log10(M_min) - 6*sigma)
-        self.second_moment_zero = M_0
-
+        self.first_moment_zero = numpy.power(10, self.log_M_min - 
+                                             6*self.sigma)
+        self.second_moment_zero = self.log_M_0
+        
     def first_moment(self, mass, z=None):
         return (self.central_first_moment(mass) +
                 self.satellite_first_moment(mass))
@@ -219,8 +233,8 @@ class HODZheng(HOD):
         Returns:
             float array of <N>
         """
-        return 0.5*(1+special.erf((numpy.log10(mass) -
-                                   numpy.log10(self.M_min))/self.sigma))
+        return 0.5*(1+special.erf((numpy.log10(mass) - 
+                                   self.log_M_min)/self.sigma))
     
     def satellite_first_moment(self, mass):
         """
@@ -234,10 +248,11 @@ class HODZheng(HOD):
         Returns:
             float array of <N>
         """
-        diff = mass - self.M_0
+        diff = mass - numpy.power(10, self.log_M_0)
         return numpy.where(diff >= 0.0,
                            self.central_first_moment(mass)*
-                           numpy.power(diff/self.M_1p, self.alpha), 0.0)
+                           numpy.power(diff/(10**self.log_M_1p), self.alpha),
+                           0.0)
 
 class HODMandelbaum(HOD):
     """
@@ -254,12 +269,12 @@ class HODMandelbaum(HOD):
             M_total_sat is the total mass in satellites.
     """
 
-    def __init__(self, M_0=1.0e13, w=1.0):
+    def __init__(self, hod_dict):
         HOD.__init__(self)
 
-        self.M_0 = M_0
-        self.M_min = 3.0*M_0
-        self.w = w
+        self.log_M_0 = hod_dict["log_M_0"]
+        self.log_M_min = numpy.log10(3.0) + hod_dict["log_M_0"]
+        self.w = hod_dict["w"]
 
         self._hod[1] = self.first_moment
         self._hod[2] = self.second_moment
@@ -284,7 +299,7 @@ class HODMandelbaum(HOD):
         Returns:
             float array of <N>
         """
-        return numpy.where(mass >= self.M_0,
+        return numpy.where(numpy.log10(mass) >= self.log_M_0,
                            1.0, 0.0)
 
     def satellite_first_moment(self, mass, z=None):
@@ -299,5 +314,6 @@ class HODMandelbaum(HOD):
         Returns:
             float array of <N>
         """
-        return numpy.where(mass < self.M_min, (mass/self.M_min)**2*self.w,
-                           mass/self.M_min*self.w)
+        return numpy.where(numpy.log10(mass) < self.log_M_min,
+                           (mass/10**self.log_M_min)**2*self.w,
+                           mass/10**self.log_M_min*self.w)

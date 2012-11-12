@@ -12,6 +12,10 @@ object that contains all of the basic cosmological parameters as well as those
 expected by the CAMB software.  In addition, we want a single class object
 that can take those parameters and return standard cosmological quantities
 (comoving distance, linear growth factor, etc.) as a function of redshift.
+When defining new inherited cosmologies be sure to change the __init__ function
+and define the correct parameters. Also be sure to specify a new
+default_cosmo_dict for the new cosmology. If a value is asked for which is not
+in the default dictionary the code currently fails with a KeyError.
 """
 
 __author__ = ("Chris Morrison <morrison.chrisb@gmail.com>, "+
@@ -136,7 +140,7 @@ class SingleEpoch(object):
 
     def set_cosmology(self, cosmo_dict, redshift=None):
         """
-        Resets cosmology dictionary and internal values to new cosmology
+        Resets cosmology dictionary and internal values to new cosmology.
 
         Args:
             cosmo_dict: a dictionary of floats containing cosmological 

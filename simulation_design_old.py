@@ -7,29 +7,26 @@ Created by Michael Schneider on 2012-10-12
 """
 
 import argparse
-import sys
-# import os.path
+import correltion
+import cosmology
+import covariance
+import defaults
+import halo
+import halo_trispectrum
+import hod
+import kernel
+import logging
+import mass_function
 import numpy
 import pandas
-#import pylab as pl
-
-# CHOMP modules
-import defaults
-import cosmology
-import mass_function
-import hod
-import halo
-import perturbation_spectra
-import halo_trispectrum
-import kernel
-import covariance
-
-import logging
+import sys
 
 # Print log messages to screen:
 # logging.basicConfig(level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
 # Print log messages to file:
-logging.basicConfig(filename='log_simulation_design.txt', level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s')
+logging.basicConfig(filename='log_simulation_design.txt',
+                    level=logging.DEBUG, format=
+                    '%(asctime)s - %(levelname)s - %(message)s')
 
 help_message = '''
 Usage: python simulation_design.py
@@ -137,7 +134,7 @@ class SimulationDesign(object):
         for ndx, val in enumerate(self.params):
             des_points[:, ndx] *= (self.params[val]['max'] - self.params[val]['min'])
             des_points[:, ndx] += self.params[val]['min']
-        self.des_points = pandas.DataFrame(des_points)
+        self.des_points = pandas.DataFrame(des_points, index=self.params)
         self.des_points.columns = self.params.columns
         return None
 

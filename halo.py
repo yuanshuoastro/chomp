@@ -141,7 +141,7 @@ class Halo(object):
         """
         return self.cosmo_dict
 
-    def set_hod(self, input_hod):
+    def set_hod_object(self, input_hod):
         """
         Reset the internal HOD object to input_hod and re-initialize splines.
 
@@ -159,7 +159,21 @@ class Halo(object):
         self._initialized_pp_gm = False
         self._initialized_pp_gg = False
         
+        self._initialized_gm_extrapolation = False
         self._initialized_gg_extrapolation = False
+        
+    def set_hod(self, hod_dict):
+        self.local_hod.set_hod(hod_dict)
+
+        self._calculate_n_bar()
+
+        self._initialized_h_g = False
+
+        self._initialized_pp_mm = False
+        self._initialized_pp_gm = False
+        self._initialized_pp_gg = False
+        
+        self._initialized_gm_extrapolation = False
         self._initialized_gg_extrapolation = False
 
     def set_halo(self, halo_dict=None):
@@ -177,8 +191,7 @@ class Halo(object):
 
         self.mass.set_halo(halo_dict)
 
-        
-        self.set_hod(self.local_hod)
+        self.set_hod_object(self.local_hod)
         
     def set_redshift(self, redshift):
         """

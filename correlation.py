@@ -141,7 +141,7 @@ class Correlation(object):
         """
         self.halo.set_halo(halo_dict)
 
-    def set_hod(self, input_hod):
+    def set_hod_object(self, input_hod):
         """
         Reset hod object to input_hod
         cosmo_dict: dictionary of floats defining a cosmology (see defaults.py
@@ -149,7 +149,19 @@ class Correlation(object):
         Args:
             input_hod: an HOD object from hod.py
         """
-        self.halo.set_hod(input_hod)
+        self.halo.set_hod_object(input_hod)
+        
+    def set_hod(self, hod_dict):
+        """
+        Reset hod object to input_hod
+        cosmo_dict: dictionary of floats defining a cosmology (see defaults.py
+            for details)
+        Args:
+            hod_dict: a dictionary defining the hod model parameters.
+            Parameters used must match the hod used or the code will throw a
+            KeyError.
+        """
+        self.halo.set_hod_object(hod_dict)
 
     def compute_correlation(self):
         """

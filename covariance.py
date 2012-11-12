@@ -99,7 +99,7 @@ class Covariance(object):
         self.D_z_NG = self.kernel.cosmo.growth_factor(self.kernel.z_bar_NG)
 
         self.halo_a = input_correlation_a.halo
-        self.halo_b = copy(self.halo_a)
+        self.halo_b = input_correlatoin_b.halo
         self.halo_tri = input_halo_trispectrum
         # self.halo.set_redshift(self.kernel.z_bar_G)
         # self.halo_tri.set_redshift(self.kernel.z_bar_NG)
@@ -167,10 +167,14 @@ class Covariance(object):
         self._chi_max_b = self.kernel.cosmo.comoving_distance(self._z_max_b)
 
         self.D_z_NG = self.kernel.cosmo.growth_factor(self.kernel.z_bar_NG)
+        self.corr_a.set_cosmology(cosmo_dict)
+        self.corr_b.set_cosmology(cosmo_dict)
 
-        self.halo_a.set_cosmology(cosmo_dict)
-        self.halo_b = copy(self.halo_a)
-        self.halo_tri.set_cosmology(cosmo_dict)
+
+        self.halo_a = self.corr_a.halo
+        self.halo_b = self.corr_b.halo
+        self.halo_tri.set_cosmology(cosmo_dict, self.kernel.z_bar_NG)
+        self._initialized_halo_splines = False
         return None
     
     def get_covariance(self):

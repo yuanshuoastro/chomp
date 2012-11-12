@@ -26,6 +26,15 @@ default_halo_dict = {
     "alpha": -1 ### Halo mass profile slope. [NFW = -1]
     }
 
+### Default values for the ZhengHOD class (other models will fail when using
+### this definition)
+default_hod_dict = {
+    "log_M_min":12.14,
+    "sigma":     0.15,
+    "log_M_0":  12.14,
+    "log_M_1p": 13.43,
+    "alpha":      1.0}
+
 ### Default global integration limits for the code.
 default_limits = {
     "k_min": 0.001,
