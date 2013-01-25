@@ -78,7 +78,7 @@ default_precision = {
                               ### the Bessel function integration in kernel.py
     "mass_npoints": 50,
     "mass_precision": 1.48e-8,
-    "window_npoints": 50,
+    "window_npoints": 100,
     "window_precision": 1.48e-6,
     "global_precision": 1.48e-32, ### Since the code has large range of values
                                   ### from say 1e-10 to 1e10 we don't want to 

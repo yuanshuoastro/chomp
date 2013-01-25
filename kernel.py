@@ -5,6 +5,7 @@ from scipy import integrate
 from scipy import special
 from scipy.interpolate import InterpolatedUnivariateSpline
 from scipy.interpolate import RectBivariateSpline
+import copy
 
 """This is a set of classes for constructing an angular correlation kernel.
 
@@ -351,6 +352,27 @@ class WindowFunctionGalaxy(WindowFunction):
 
         return dzdchi*self._redshift_dist.dndz(z)
 
+
+class WindowFunctionGalaxyDelta(WindowFunction):
+    """
+    WindowFunction class for a delta-function galaxy distribution.
+    """
+    def __init__(self, redshift, cosmo_multi_epoch=None, **kws):
+        WindowFunction.__init__(self, redshift, redshift,
+                                cosmo_multi_epoch)
+        self._delta_width = 0.001
+        ### Reset z range since this distribution is not integrated in Kernel.
+        self.z_min = 0.0
+        self.z_max = 10.0
+
+    def raw_window_function(self, chi):
+        return numpy.where(numpy.abs(chi - self.chi_min) < self._delta_width,
+                           1.0, 0.0)
+
+    def window_function(self, chi):
+        return self.raw_window_function(chi)
+
+
 class WindowFunctionConvergence(WindowFunction):
     """WindowFunction class for convergence of a background sample.
 
@@ -533,8 +555,8 @@ class Kernel(object):
         self.ln_ktheta_min = numpy.log(ktheta_min)
         self.ln_ktheta_max = numpy.log(ktheta_max)
 
-        self.window_function_a = window_function_a
-        self.window_function_b = window_function_b
+        self.window_function_a = copy.copy(window_function_a)
+        self.window_function_b = copy.copy(window_function_b)
 
         self.z_min = numpy.max([self.window_function_a.z_min,
                                 self.window_function_b.z_min])
@@ -712,7 +734,7 @@ class Kernel(object):
                 "#ttype2 = kernel [(h/Mpc)^2]\n")
         for ln_ktheta, kernel in zip(
             self._ln_ktheta_array, self._kernel_array):
-            f.write("%1.10f %1.10f\n" % (numpy.exp(ln_ktheta), kernel))
+            f.write("%1.10g %1.10g\n" % (numpy.exp(ln_ktheta), kernel))
         f.close()
         
         
@@ -772,8 +794,30 @@ class GalaxyGalaxyLensingKernel(Kernel):
         return (self.window_function_a.window_function(chi)*
                 self.window_function_b.window_function(chi)*
                 D_z*D_z*special.jn(2, ktheta*chi))     
-        
-        
+
+
+class KernelGalaxyDelta(Kernel):
+    def __init__(self, ktheta_min, ktheta_max,
+                 window_function_a, window_function_b,
+                 cosmo_multi_epoch=None, force_quad=False, **kws):
+        if window_function_a.__class__.__name__ != "WindowFunctionGalaxyDelta":
+            print "WARNING: KernelGalaxyDelta expects window_function_a" \
+                  "of class WindowFunctionGalaxyDelta"
+        Kernel.__init__(self, ktheta_min, ktheta_max,
+                        window_function_a, window_function_b,
+                        cosmo_multi_epoch, force_quad, **kws)
+        ### Set the distance obtained by integrating over the delta-function
+        ### foreground distribution
+        self.chi_g = window_function_a.chi_min
+
+    def raw_kernel(self, ln_ktheta):
+        D_z = self.cosmo.growth_factor(self.cosmo.redshift(self.chi_g))
+        ktheta = numpy.exp(ln_ktheta)
+
+        return (self.window_function_b.window_function(self.chi_g) *
+                D_z*D_z*special.j0(ktheta*self.chi_g))
+
+
 class KernelCovariance(Kernel):
     """
     Inherited class from Kernel defining the redshift integral over the various

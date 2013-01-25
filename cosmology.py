@@ -56,7 +56,7 @@ class SingleEpoch(object):
         self._n = cosmo_dict["n_scalar"]
         self._w0 = cosmo_dict["w0"]
         self._wa = cosmo_dict["wa"]
-        self.H0 = 100.0/(3.0*10**5)
+        self.H0 = 100.0/(2.998*10**5)  # H0 / c in h Mpc^(-1)
 
         self._flat = True
         self._open = False

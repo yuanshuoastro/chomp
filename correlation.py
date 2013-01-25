@@ -268,7 +268,7 @@ class Correlation(object):
         f.write("#ttype1 = theta [deg]\n#ttype2 = wtheta\n")
         for theta, wtheta in zip(
             self.theta_array, self.wtheta_array):
-            f.write("%1.10f %1.10f\n" % (theta/deg_to_rad, wtheta))
+            f.write("%1.10g %1.10g\n" % (theta/deg_to_rad, wtheta))
         f.close()
         
 class CorrelationProjectedComoving(Correlation):
